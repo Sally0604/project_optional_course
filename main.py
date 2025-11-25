@@ -19,8 +19,8 @@ W=800
 TIME=0.001
 screen=pg.display.set_mode((W,H))
 pg.display.set_caption("多元選修")
-image_tomato=pg.image.load('image/tomato.png')
-pg.display.set_icon(image_tomato)
+image_icon=pg.image.load('image/game_icon.png') #load icon
+pg.display.set_icon(image_icon)
 
 
 ##### initialize end
@@ -41,6 +41,7 @@ class Ball:
         self.x+=self.vx
         self.y+=self.vy
         pg.draw.circle(screen,(255,0,255),(int(self.x),int(self.y)),radius=float(self.Radius))
+        #pygame.draw.circle(畫在哪裡, 顏色, 圓心座標, 半徑)
         
 class Planet:
     def __init__(self,x,y,Radius,mass):
