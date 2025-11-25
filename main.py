@@ -52,7 +52,7 @@ class Planet:
     def draw(self,screen):
         pg.draw.circle(screen,(50, 180, 180),(int(self.x),int(self.y)),radius=float(self.Radius))
 
-def apply_gravity(ball, planet,dt, G=1000):
+def apply_gravity(ball, planet,dt, G=100):
     dx = planet.x - ball.x
     dy = planet.y - ball.y
     dist = math.sqrt(dx*dx + dy*dy)
@@ -66,7 +66,7 @@ def apply_gravity(ball, planet,dt, G=1000):
     ball.vy += ay*dt
 ##### def end
 
-ball=Ball(x=W/2,y=H/2,Radius=20,mass=100)
+ball=Ball(x=W/2,y=H/2,Radius=20,mass=10000)
 planet=Planet(x=300,y=200,Radius=50,mass=100)
 clock=pg.time.Clock()
 dt=0
