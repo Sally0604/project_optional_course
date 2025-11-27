@@ -19,9 +19,9 @@ W=800
 SCALE=10
 TIME=0.01
 ballVx0=0.5
-ballVy0=0
+ballVy0=0.5
 ballMass=1
-planetMass=81.3*SCALE
+planetMass=81.3
 screen=pg.display.set_mode((W,H))
 pg.display.set_caption("多元選修")
 image_icon=pg.image.load('image/game_icon.png') #load icon
@@ -49,13 +49,17 @@ class Ball: # 類似一個package的自訂函數(們) 當成C++的struct
         #pygame.draw.circle(畫在哪裡, 顏色, 圓心座標, 半徑)
         
 class Planet:
-    def __init__(self,x,y,Radius,mass):
+    def __init__(self,x,y,Radius,mass,vx=0.5,vy=0):
         self.x=x
         self.y=y
         self.Radius=Radius
         self.mass=mass
+        self.vx=vx
+        self.vy=vy
         
     def draw(self,screen):
+        self.x+=self.vx
+        self.y+=self.vy
         pg.draw.circle(screen,(50, 180, 180),(int(self.x),int(self.y)),radius=float(self.Radius))
 
 def apply_gravity(ball, planet,dt, G=100):
@@ -78,6 +82,23 @@ clock=pg.time.Clock()
 dt=0
 dragging=False
 
+def draggingball(event):
+    global dragging
+    if event.type == pg.MOUSEBUTTONDOWN:
+        if event.button == 1:  # 左鍵
+            mx, my = pg.mouse.get_pos()
+            # 判斷滑鼠是否點在 ball 上（用距離判斷）
+            if (mx - ball.x)**2 + (my - ball.y)**2 <= ball.Radius**2:
+                dragging = True
+
+    if event.type == pg.MOUSEBUTTONUP:
+        if event.button == 1:  # 左鍵放開
+            dragging = False
+
+    if event.type == pg.MOUSEMOTION:
+        if dragging:
+            ball.x, ball.y = pg.mouse.get_pos()
+
 def showScreen1():
     global dragging
     screen.fill((247,251,247))
@@ -87,24 +108,12 @@ def showScreen1():
         if event.type== pg.QUIT:
             pg.quit()
         
-        ##### dragging ball
-        if event.type == pg.MOUSEBUTTONDOWN:
-            if event.button == 1:  # 左鍵
-                mx, my = pg.mouse.get_pos()
-                # 判斷滑鼠是否點在 ball 上（用距離判斷）
-                if (mx - ball.x)**2 + (my - ball.y)**2 <= ball.Radius**2:
-                    dragging = True
+        draggingball(event)
 
-        if event.type == pg.MOUSEBUTTONUP:
-            if event.button == 1:  # 左鍵放開
-                dragging = False
-
-        if event.type == pg.MOUSEMOTION:
-            if dragging:
-                ball.x, ball.y = pg.mouse.get_pos()
-        ### dragging ball end
-
-    apply_gravity(ball,planet,dt)
+    if not dragging:
+        apply_gravity(ball,planet,dt)
+        apply_gravity(planet,ball,dt)
+        
     pg.display.flip()
 
 
