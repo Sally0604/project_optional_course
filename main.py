@@ -12,16 +12,27 @@ import pygame as pg
 import math
 
 ##### initialize
-
-
 H=600
 W=800
 SCALE=10
-TIME=0.01
-ballVx0=0.5
-ballVy0=0.5
+TIME=120 #FPS
+
+# Ball 初始參數
+ballX0=W/2+300
+ballY0=H/2+100
+ballRadius=20
 ballMass=1
-planetMass=81.3
+ballVx0=-100
+ballVy0=0
+
+# Planet 初始參數
+planetX0=200
+planetY0=200
+planetRadius=30
+planetMass=1200
+planetVx0=100
+planetVy0=0
+
 screen=pg.display.set_mode((W,H))
 pg.display.set_caption("多元選修")
 image_icon=pg.image.load('image/game_icon.png') #load icon
@@ -41,10 +52,12 @@ class Ball: # 類似一個package的自訂函數(們) 當成C++的struct
         self.mass=mass
         self.vx=vx
         self.vy=vy
+        self.start_x = x
+        self.start_y = y
         
     def draw(self,screen):
-        self.x+=self.vx
-        self.y+=self.vy
+        # self.x+=self.vx
+        # self.y+=self.vy
         pg.draw.circle(screen,(255,0,255),(int(self.x),int(self.y)),radius=float(self.Radius))
         #pygame.draw.circle(畫在哪裡, 顏色, 圓心座標, 半徑)
         
@@ -58,8 +71,8 @@ class Planet:
         self.vy=vy
         
     def draw(self,screen):
-        self.x+=self.vx
-        self.y+=self.vy
+        # self.x+=self.vx
+        # self.y+=self.vy
         pg.draw.circle(screen,(50, 180, 180),(int(self.x),int(self.y)),radius=float(self.Radius))
 
 def apply_gravity(ball, planet,dt, G=100):
@@ -74,30 +87,49 @@ def apply_gravity(ball, planet,dt, G=100):
 
     ball.vx += ax*dt
     ball.vy += ay*dt
+    ball.x += ball.vx*dt
+    ball.y += ball.vy*dt
 ##### def end
 
-ball=Ball(x=W/2,y=H/2,Radius=20,mass=ballMass,vx=ballVx0,vy=ballVy0) #塞參數進去
-planet=Planet(x=300,y=200,Radius=50,mass=planetMass)
+ball=Ball(x=ballX0,y=ballY0,Radius=20,mass=ballMass,vx=ballVx0,vy=ballVy0) #塞參數進去
+planet=Planet(x=planetX0,y=planetY0,Radius=50,mass=planetMass,vx=planetVx0,vy=planetVy0)
 clock=pg.time.Clock()
 dt=0
 dragging=False
 
-def draggingball(event):
-    global dragging
-    if event.type == pg.MOUSEBUTTONDOWN:
-        if event.button == 1:  # 左鍵
-            mx, my = pg.mouse.get_pos()
-            # 判斷滑鼠是否點在 ball 上（用距離判斷）
-            if (mx - ball.x)**2 + (my - ball.y)**2 <= ball.Radius**2:
-                dragging = True
+def draggingball(ball, event, dragging, power=4):
+    """
+    ball: 物體（具有 x, y, vx, vy, radius）
+    event: pygame 事件
+    dragging: 是否正在拖曳
+    power: 發射力量倍率
+    """
 
-    if event.type == pg.MOUSEBUTTONUP:
-        if event.button == 1:  # 左鍵放開
-            dragging = False
+    # 按下左鍵 → 判斷是否按到球
+    if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+        mx, my = pg.mouse.get_pos()
+        # 判斷是否點到球
+        if (mx - ball.x)**2 + (my - ball.y)**2 <= ball.Radius**2:
+            dragging = True
+            return dragging, None, None
 
-    if event.type == pg.MOUSEMOTION:
-        if dragging:
-            ball.x, ball.y = pg.mouse.get_pos()
+    # 拖曳中 → 跟著滑鼠走
+    if event.type == pg.MOUSEMOTION and dragging:
+        ball.x, ball.y = pg.mouse.get_pos()
+        return dragging, None, None
+
+    # 放開左鍵 → 給速度（發射）
+    if event.type == pg.MOUSEBUTTONUP and event.button == 1 and dragging:
+        dragging = False
+        mx, my = pg.mouse.get_pos()
+
+        # 速度 = 從球被拉的位置 → 放手瞬間回彈
+        vx = (ball.start_x - mx) * power
+        vy = (ball.start_y - my) * power
+
+        return dragging, vx, vy
+
+    return dragging, None, None
 
 def showScreen1():
     global dragging
@@ -107,18 +139,21 @@ def showScreen1():
     for event in pg.event.get():
         if event.type== pg.QUIT:
             pg.quit()
-        
-        draggingball(event)
+        dragging, vx, vy = draggingball(ball, event, dragging)
 
-    if not dragging:
-        apply_gravity(ball,planet,dt)
-        apply_gravity(planet,ball,dt)
+        if vx is not None:
+            ball.vx = vx
+            ball.vy = vy
+
+    # if not dragging:            
+    apply_gravity(ball,planet,dt)
+    apply_gravity(planet,ball,dt)
         
     pg.display.flip()
 
 
 while 1:
-    dt=clock.tick(60)/1000 # 60fps 轉成秒
+    dt=clock.tick(TIME)/1000 # 60fps 轉成秒
     showScreen1()
 
 pg.quit()
