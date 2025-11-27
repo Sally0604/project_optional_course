@@ -16,7 +16,12 @@ import math
 
 H=600
 W=800
-TIME=0.001
+SCALE=10
+TIME=0.01
+ballVx0=0.5
+ballVy0=0
+ballMass=1
+planetMass=81.3*SCALE
 screen=pg.display.set_mode((W,H))
 pg.display.set_caption("多元選修")
 image_icon=pg.image.load('image/game_icon.png') #load icon
@@ -28,7 +33,7 @@ pg.display.set_icon(image_icon)
 
 ##### def class
 
-class Ball:
+class Ball: # 類似一個package的自訂函數(們) 當成C++的struct
     def __init__(self,x,y,Radius,mass,vx=0,vy=0):
         self.x=x
         self.y=y
@@ -55,8 +60,8 @@ class Planet:
 
 def apply_gravity(ball, planet,dt, G=100):
     dx = planet.x - ball.x
-    dy = planet.y - ball.y
-    dist = math.sqrt(dx*dx + dy*dy)
+    dy = planet.y - ball.y #計算位移
+    dist = math.sqrt(dx*dx + dy*dy) #計算距離
 
     force = G * planet.mass / (dist * dist)
 
@@ -67,8 +72,8 @@ def apply_gravity(ball, planet,dt, G=100):
     ball.vy += ay*dt
 ##### def end
 
-ball=Ball(x=W/2,y=H/2,Radius=20,mass=10000)
-planet=Planet(x=300,y=200,Radius=50,mass=100)
+ball=Ball(x=W/2,y=H/2,Radius=20,mass=ballMass,vx=ballVx0,vy=ballVy0) #塞參數進去
+planet=Planet(x=300,y=200,Radius=50,mass=planetMass)
 clock=pg.time.Clock()
 dt=0
 dragging=False
@@ -76,7 +81,7 @@ dragging=False
 def showScreen1():
     global dragging
     screen.fill((247,251,247))
-    ball.draw(screen)
+    ball.draw(screen) #依照之前塞的參數畫出來
     planet.draw(screen)
     for event in pg.event.get():
         if event.type== pg.QUIT:
@@ -99,7 +104,7 @@ def showScreen1():
                 ball.x, ball.y = pg.mouse.get_pos()
         ### dragging ball end
 
-        apply_gravity(ball,planet,dt)
+    apply_gravity(ball,planet,dt)
     pg.display.flip()
 
 
