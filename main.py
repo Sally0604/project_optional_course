@@ -18,16 +18,16 @@ SCALE=10
 TIME=120 #FPS
 
 # Ball 初始參數
-ballX0=W/2+300
-ballY0=H/2+100
+ballX0=W/2+225
+ballY0=H/2+175
 ballRadius=20
 ballMass=1
-ballVx0=-50
+ballVx0=0
 ballVy0=0
 
 # Planet 初始參數
-planetX0=200
-planetY0=200
+planetX0=W/2-80
+planetY0=H/2-40
 planetRadius=30
 planetMass=120000
 planetVx0=0
@@ -96,27 +96,27 @@ planet=Planet(x=planetX0,y=planetY0,Radius=50,mass=planetMass,vx=planetVx0,vy=pl
 clock=pg.time.Clock()
 dt=0
 dragging=False
-
-def draggingball(ball, event, dragging, power=4):
+start=False
+def draggingball(ball, event, power=2):
     """
     ball: 物體(具有 x, y, vx, vy, radius)
     event: pygame 事件
     dragging: 是否正在拖曳
     power: 發射力量倍率
     """
-
+    global dragging,start
     # 按下左鍵 → 判斷是否按到球
     if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
         mx, my = pg.mouse.get_pos()
         # 判斷是否點到球
         if (mx - ball.x)**2 + (my - ball.y)**2 <= ball.Radius**2:
             dragging = True
-            return dragging, None, None
+        print("1")
 
     # 拖曳中 → 跟著滑鼠走
-    if event.type == pg.MOUSEMOTION and dragging:
-        ball.x, ball.y = pg.mouse.get_pos()
-        return dragging, None, None
+    # if event.type == pg.MOUSEMOTION and dragging:
+    #     a=1
+         #ball.x, ball.y = pg.mouse.get_pos()
 
     # 放開左鍵 → 給速度（發射）
     if event.type == pg.MOUSEBUTTONUP and event.button == 1 and dragging:
@@ -124,12 +124,12 @@ def draggingball(ball, event, dragging, power=4):
         mx, my = pg.mouse.get_pos()
 
         # 速度 = 從球被拉的位置 → 放手瞬間回彈
-        vx = (ball.start_x - mx) * power
-        vy = (ball.start_y - my) * power
+        ball.vx = (ball.start_x - mx) * power
+        ball.vy = (ball.start_y - my) * power
+        print(ball.vx, ball.vy)
+        start=True
+        print("0")
 
-        return dragging, vx, vy
-
-    return dragging, None, None
 
 def showScreen1():
     global dragging
@@ -139,15 +139,12 @@ def showScreen1():
     for event in pg.event.get():
         if event.type== pg.QUIT:
             pg.quit()
-        dragging, vx, vy = draggingball(ball, event, dragging)
-
-        if vx is not None:
-            ball.vx = vx
-            ball.vy = vy
-
-    # if not dragging:            
-    apply_gravity(ball,planet,dt)
-    apply_gravity(planet,ball,dt)
+        draggingball(ball, event)
+    ball.x+=ball.vx*dt
+    ball.y+=ball.vy*dt
+    ball.draw(screen)
+    if start:apply_gravity(ball,planet,dt)
+    if start:apply_gravity(planet,ball,dt)
         
     pg.display.flip()
 
