@@ -22,15 +22,15 @@ ballX0=W/2+300
 ballY0=H/2+100
 ballRadius=20
 ballMass=1
-ballVx0=-100
+ballVx0=-50
 ballVy0=0
 
 # Planet 初始參數
 planetX0=200
 planetY0=200
 planetRadius=30
-planetMass=1200
-planetVx0=100
+planetMass=120000
+planetVx0=0
 planetVy0=0
 
 screen=pg.display.set_mode((W,H))
@@ -99,7 +99,7 @@ dragging=False
 
 def draggingball(ball, event, dragging, power=4):
     """
-    ball: 物體（具有 x, y, vx, vy, radius）
+    ball: 物體(具有 x, y, vx, vy, radius)
     event: pygame 事件
     dragging: 是否正在拖曳
     power: 發射力量倍率
