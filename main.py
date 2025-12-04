@@ -15,7 +15,11 @@ import math
 H=600
 W=800
 SCALE=10
-TIME=120 #FPS
+TIME=2 # 60*TIME # 時間倍率
+
+# 環境 初始變數
+G=100 # 重力常數
+POWER=2 # 彈弓
 
 # Ball 初始參數
 ballX0=W/2+225
@@ -28,7 +32,7 @@ ballVy0=0
 # Planet 初始參數
 planetX0=W/2-80
 planetY0=H/2-40
-planetRadius=30
+planetRadius=50
 planetMass=120000
 planetVx0=0
 planetVy0=0
@@ -75,12 +79,12 @@ class Planet:
         # self.y+=self.vy
         pg.draw.circle(screen,(50, 180, 180),(int(self.x),int(self.y)),radius=float(self.Radius))
 
-def apply_gravity(ball, planet,dt, G=100):
+def apply_gravity(ball, planet,dt, g=G):
     dx = planet.x - ball.x
     dy = planet.y - ball.y #計算位移
     dist = math.sqrt(dx*dx + dy*dy) #計算距離
 
-    force = G * planet.mass / (dist * dist)
+    force = g * planet.mass / (dist * dist)
 
     ax = force * (dx / dist)
     ay = force * (dy / dist)
@@ -91,13 +95,13 @@ def apply_gravity(ball, planet,dt, G=100):
     ball.y += ball.vy*dt
 ##### def end
 
-ball=Ball(x=ballX0,y=ballY0,Radius=20,mass=ballMass,vx=ballVx0,vy=ballVy0) #塞參數進去
-planet=Planet(x=planetX0,y=planetY0,Radius=50,mass=planetMass,vx=planetVx0,vy=planetVy0)
+ball=Ball(x=ballX0,y=ballY0,Radius=ballRadius,mass=ballMass,vx=ballVx0,vy=ballVy0) #塞參數進去
+planet=Planet(x=planetX0,y=planetY0,Radius=planetRadius,mass=planetMass,vx=planetVx0,vy=planetVy0)
 clock=pg.time.Clock()
 dt=0
 dragging=False
 start=False
-def draggingball(ball, event, power=2):
+def draggingball(ball, event, power=POWER):
     """
     ball: 物體(具有 x, y, vx, vy, radius)
     event: pygame 事件
@@ -130,6 +134,11 @@ def draggingball(ball, event, power=2):
         start=True
         print("0")
 
+def iscollide(ball, planet):
+    dx = planet.x - ball.x
+    dy = planet.y - ball.y
+    distance = math.sqrt(dx*dx + dy*dy)
+    return distance <= (ball.Radius + planet.Radius)
 
 def showScreen1():
     global dragging
@@ -140,6 +149,9 @@ def showScreen1():
         if event.type== pg.QUIT:
             pg.quit()
         draggingball(ball, event)
+    if iscollide(ball, planet):
+        print("Collision detected!")
+    
     ball.x+=ball.vx*dt
     ball.y+=ball.vy*dt
     ball.draw(screen)
@@ -150,7 +162,7 @@ def showScreen1():
 
 
 while 1:
-    dt=clock.tick(TIME)/1000 # 60fps 轉成秒
+    dt=clock.tick(60*TIME)/1000 # 60fps 轉成秒
     showScreen1()
 
 pg.quit()
