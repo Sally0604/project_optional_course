@@ -14,6 +14,8 @@ pg.init()
 ##### initialize
 H=600 #螢幕高度
 W=800 #螢幕寬度
+background_image = pg.image.load('image/multiverse.png')
+background_image = pg.transform.smoothscale(background_image, (W, H))
 SCALE=10
 TIME=2 # 60*TIME # 時間倍率
 
@@ -56,7 +58,7 @@ pg.display.set_icon(image_icon) #設定icon
 
 
 class Ball: # 類似一個package的自訂函數(們) 當成C++的struct
-    def __init__(self,x,y,Radius,mass,vx=0,vy=0,color=(255,0,255),type=None):
+    def __init__(self,x,y,Radius,mass,vx=0,vy=0,color=(255,0,255,255),type=None,img=None):
         self.x=x
         self.y=y
         self.Radius=Radius
@@ -67,17 +69,24 @@ class Ball: # 類似一個package的自訂函數(們) 當成C++的struct
         self.start_y = y
         self.color=color
         self.type=type
+        self.img = pg.image.load(img).convert_alpha() if img else None
+        if self.img:
+            self.img = pg.transform.scale(self.img, (Radius*2, Radius*2))
+        self.tri_surf = pg.Surface((W, H), pg.SRCALPHA)
         
     def draw(self,screen):
         # self.x+=self.vx
         # self.y+=self.vy
-        pg.draw.circle(screen,self.color,(int(self.x),int(self.y)),radius=float(self.Radius))
+        pg.draw.circle(self.tri_surf,self.color,(int(self.x),int(self.y)),radius=float(self.Radius))
+        if self.img:
+            screen.blit(self.img, (self.x - self.Radius, self.y - self.Radius))
+        screen.blit(self.tri_surf, (0, 0))
         #pg.draw.circle(畫在哪裡, 顏色, 圓心座標, 半徑)
 
 ballArray=[]
-ball=Ball(x=ballX0,y=ballY0,Radius=ballRadius,mass=ballMass,vx=ballVx0,vy=ballVy0,color=(255, 0, 255),type="ball") 
-planet=Ball(x=planetX0,y=planetY0,Radius=planetRadius,mass=planetMass,vx=planetVx0,vy=planetVy0,color=(50, 180, 180),type="planet") 
-target=Ball(x=targetX0,y=targetY0,Radius=targetRadius,mass=targetMass,vx=targetVx0,vy=targetVy0,color=(0, 255, 0),type="target")
+ball=Ball(x=ballX0,y=ballY0,Radius=ballRadius,mass=ballMass,vx=ballVx0,vy=ballVy0,color= (220, 220, 220, 80),type="ball",img="image/space_cat.png") 
+planet=Ball(x=planetX0,y=planetY0,Radius=planetRadius,mass=planetMass,vx=planetVx0,vy=planetVy0,color=(50, 180, 180,0),type="planet", img="image/Jupiter.png") 
+target=Ball(x=targetX0,y=targetY0,Radius=targetRadius,mass=targetMass,vx=targetVx0,vy=targetVy0,color=(0, 255, 0,255),type="target")
 
 ballArray.append(ball)
 ballArray.append(planet)
@@ -88,9 +97,23 @@ dt=0
 dragging=False
 start=False
 
+def reset(): # 重置遊戲
+    global start
+    ball.x=ballX0
+    ball.y=ballY0
+    ball.vx=ballVx0
+    ball.vy=ballVy0
+    planet.x=planetX0
+    planet.y=planetY0
+    planet.vx=planetVx0
+    planet.vy=planetVy0
+    start=False
+
 def changePosition(): # 改變位置
     ball.x+=ball.vx*dt
     ball.y+=ball.vy*dt
+    planet.x+=planet.vx*dt
+    planet.y+=planet.vy*dt
     if start:apply_gravity(ball,planet,dt)
     if start:apply_gravity(planet,ball,dt)
 
@@ -133,14 +156,15 @@ def drawDraggingLine(ball): # 畫出拖曳線
     right_x = ball.x - px * ball.Radius
     right_y = ball.y - py * ball.Radius
 
+    tri_surf = pg.Surface((W, H), pg.SRCALPHA)
+    color = (220, 220, 220, 80)
     # 畫三角形（顏色可調）
     pg.draw.polygon(
-        screen,
-        (220,220,220),
+        tri_surf,
+        color,
         [(mx, my), (left_x, left_y), (right_x, right_y)]
     )
-
-
+    screen.blit(tri_surf, (0, 0))
 
 def draggingball(ball, event, power=POWER): # 處理拖曳與發射
     """
@@ -171,8 +195,11 @@ def draggingball(ball, event, power=POWER): # 處理拖曳與發射
         start=True
         print("mouseUp")
 
-def gameOver(failureType,b): # 遊戲結束
+def end(failureType,b): # 遊戲結束
     global start
+    ball.img = pg.image.load('image/space_cat_pop.png')
+    ball.img = pg.transform.scale(ball.img, (ball.Radius*2*3, ball.Radius*2*3 ))
+    ball.draw(screen)
     ball.vx = 0
     ball.vy = 0
     start = False
@@ -182,8 +209,8 @@ def gameOver(failureType,b): # 遊戲結束
         elif b.type == "planet":
             print("Game Over: Collision detected!")
     
-    elif failureType == "out_of_bounds":
-        print("Game Over: Ball is out of bounds!")
+    # elif failureType == "out_of_bounds":
+    #     print("Game Over: Ball is out of bounds!")
 
 def iscollide(ball, planet): # 碰撞偵測
     dx = planet.x - ball.x
@@ -197,7 +224,7 @@ def isOutOfBounds(ball):
 
 def showScreen1():
     global dragging, start
-    screen.fill((247,251,247))
+    # screen.fill((247,251,247))
     changePosition()
     for event in pg.event.get():
         if event.type== pg.QUIT:
@@ -212,16 +239,17 @@ def showScreen1():
 
     for b in ballArray:
         if b.type!="ball" and iscollide(ball, b) and start:
-            gameOver("collision",b)
+            end("collision",b)
     
-    if isOutOfBounds(ball) and start:
-        gameOver("out_of_bounds", ball)
+    # if isOutOfBounds(ball) and start:
+    #     end("out_of_bounds", ball)
     
     pg.display.flip()
 
 
 while 1:
     dt=clock.tick(60*TIME)/1000 # 60fps 轉成秒
+    screen.blit(background_image, (0, 0))
     showScreen1()
 
 pg.quit()
