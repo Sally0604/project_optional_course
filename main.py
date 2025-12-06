@@ -126,12 +126,12 @@ def drawDraggingLine(ball): # 畫出拖曳線
     px = -uy
     py = ux
 
-    # 球外圓的左右兩點（等腰三角形的底邊點）
-    left_x  = ball.x + ux * ball.Radius + px * ball.Radius
-    left_y  = ball.y + uy * ball.Radius + py * ball.Radius
+    # 等腰三角形的底邊點
+    left_x  = ball.x + px * ball.Radius
+    left_y  = ball.y + py * ball.Radius
 
-    right_x = ball.x + ux * ball.Radius - px * ball.Radius
-    right_y = ball.y + uy * ball.Radius - py * ball.Radius
+    right_x = ball.x - px * ball.Radius
+    right_y = ball.y - py * ball.Radius
 
     # 畫三角形（顏色可調）
     pg.draw.polygon(
@@ -139,6 +139,8 @@ def drawDraggingLine(ball): # 畫出拖曳線
         (220,220,220),
         [(mx, my), (left_x, left_y), (right_x, right_y)]
     )
+
+
 
 def draggingball(ball, event, power=POWER): # 處理拖曳與發射
     """
@@ -197,16 +199,17 @@ def showScreen1():
     global dragging, start
     screen.fill((247,251,247))
     changePosition()
-    for b in ballArray:
-        b.draw(screen)
     for event in pg.event.get():
         if event.type== pg.QUIT:
             pg.quit()
         draggingball(ball, event)
 
-    if dragging: # 如果正在拖曳 就畫出拖曳線
+    if dragging: # 如果正在拖曳 就畫出拖曳線 (要先畫拖曳線 再畫球免得被蓋住)
         drawDraggingLine(ball)
     
+    for b in ballArray:
+        b.draw(screen)
+
     for b in ballArray:
         if b.type!="ball" and iscollide(ball, b) and start:
             gameOver("collision",b)
