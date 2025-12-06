@@ -10,7 +10,7 @@ https://www.peko-step.com/zhtw/tool/tfcolor.html (顏色轉換器)
 
 import pygame as pg
 import math
-
+pg.init()
 ##### initialize
 H=600 #螢幕高度
 W=800 #螢幕寬度
@@ -37,6 +37,15 @@ planetMass=120000
 planetVx0=0
 planetVy0=0
 
+# Target 初始參數(座標、半徑、質量、速度)
+targetX0=W/2-300
+targetY0=H/2-200
+targetRadius=10
+targetMass=1
+targetVx0=0
+targetVy0=0
+
+
 screen=pg.display.set_mode((W,H)) #設定視窗大小
 pg.display.set_caption("多元選修") #視窗標題
 image_icon=pg.image.load('image/game_icon.png') #載入icon
@@ -46,10 +55,8 @@ pg.display.set_icon(image_icon) #設定icon
 ##### initialize end
 
 
-##### def class
-
 class Ball: # 類似一個package的自訂函數(們) 當成C++的struct
-    def __init__(self,x,y,Radius,mass,vx=0,vy=0):
+    def __init__(self,x,y,Radius,mass,vx=0,vy=0,color=(255,0,255),type=None):
         self.x=x
         self.y=y
         self.Radius=Radius
@@ -58,28 +65,36 @@ class Ball: # 類似一個package的自訂函數(們) 當成C++的struct
         self.vy=vy
         self.start_x = x
         self.start_y = y
+        self.color=color
+        self.type=type
         
     def draw(self,screen):
         # self.x+=self.vx
         # self.y+=self.vy
-        pg.draw.circle(screen,(255,0,255),(int(self.x),int(self.y)),radius=float(self.Radius))
+        pg.draw.circle(screen,self.color,(int(self.x),int(self.y)),radius=float(self.Radius))
         #pg.draw.circle(畫在哪裡, 顏色, 圓心座標, 半徑)
-        
-class Planet:
-    def __init__(self,x,y,Radius,mass,vx=0.5,vy=0):
-        self.x=x
-        self.y=y
-        self.Radius=Radius
-        self.mass=mass
-        self.vx=vx
-        self.vy=vy
-        
-    def draw(self,screen):
-        # self.x+=self.vx
-        # self.y+=self.vy
-        pg.draw.circle(screen,(50, 180, 180),(int(self.x),int(self.y)),radius=float(self.Radius))
 
-def apply_gravity(ball, planet,dt, g=G):
+ballArray=[]
+ball=Ball(x=ballX0,y=ballY0,Radius=ballRadius,mass=ballMass,vx=ballVx0,vy=ballVy0,color=(255, 0, 255),type="ball") 
+planet=Ball(x=planetX0,y=planetY0,Radius=planetRadius,mass=planetMass,vx=planetVx0,vy=planetVy0,color=(50, 180, 180),type="planet") 
+target=Ball(x=targetX0,y=targetY0,Radius=targetRadius,mass=targetMass,vx=targetVx0,vy=targetVy0,color=(0, 255, 0),type="target")
+
+ballArray.append(ball)
+ballArray.append(planet)
+ballArray.append(target)
+
+clock=pg.time.Clock() #計時器   
+dt=0
+dragging=False
+start=False
+
+def changePosition(): # 改變位置
+    ball.x+=ball.vx*dt
+    ball.y+=ball.vy*dt
+    if start:apply_gravity(ball,planet,dt)
+    if start:apply_gravity(planet,ball,dt)
+
+def apply_gravity(ball, planet,dt, g=G): # 重力影響
     dx = planet.x - ball.x
     dy = planet.y - ball.y #計算位移
     dist = math.sqrt(dx*dx + dy*dy) #計算距離
@@ -91,17 +106,41 @@ def apply_gravity(ball, planet,dt, g=G):
 
     ball.vx += ax*dt #v=v0+at
     ball.vy += ay*dt
-    ball.x += ball.vx*dt
-    ball.y += ball.vy*dt
-##### def end
 
-ball=Ball(x=ballX0,y=ballY0,Radius=ballRadius,mass=ballMass,vx=ballVx0,vy=ballVy0) #塞參數進去
-planet=Planet(x=planetX0,y=planetY0,Radius=planetRadius,mass=planetMass,vx=planetVx0,vy=planetVy0)
-clock=pg.time.Clock() #計時器
-dt=0
-dragging=False
-start=False
-def draggingball(ball, event, power=POWER):
+def drawDraggingLine(ball): # 畫出拖曳線
+    mx, my = pg.mouse.get_pos()
+
+    dx = mx - ball.x
+    dy = my - ball.y
+    dist = math.sqrt(dx*dx + dy*dy)
+
+    # 距離太短就不畫
+    if dist < 1:
+        return
+
+    # 單位向量（球 → 滑鼠）
+    ux = dx / dist
+    uy = dy / dist
+
+    # 垂直單位向量（旋轉 90°）
+    px = -uy
+    py = ux
+
+    # 球外圓的左右兩點（等腰三角形的底邊點）
+    left_x  = ball.x + ux * ball.Radius + px * ball.Radius
+    left_y  = ball.y + uy * ball.Radius + py * ball.Radius
+
+    right_x = ball.x + ux * ball.Radius - px * ball.Radius
+    right_y = ball.y + uy * ball.Radius - py * ball.Radius
+
+    # 畫三角形（顏色可調）
+    pg.draw.polygon(
+        screen,
+        (220,220,220),
+        [(mx, my), (left_x, left_y), (right_x, right_y)]
+    )
+
+def draggingball(ball, event, power=POWER): # 處理拖曳與發射
     """
     ball: 物體(具有 x, y, vx, vy, radius)
     event: pygame 事件
@@ -115,12 +154,8 @@ def draggingball(ball, event, power=POWER):
         # 判斷是否點到球
         if (mx - ball.x)**2 + (my - ball.y)**2 <= ball.Radius**2:
             dragging = True
-        print("1")
+        print("mouseDown")
 
-    # 拖曳中 → 跟著滑鼠走
-    # if event.type == pg.MOUSEMOTION and dragging:
-    #     a=1
-         #ball.x, ball.y = pg.mouse.get_pos()
 
     # 放開左鍵 → 給速度（發射）
     if event.type == pg.MOUSEBUTTONUP and event.button == 1 and dragging:
@@ -132,32 +167,53 @@ def draggingball(ball, event, power=POWER):
         ball.vy = (ball.start_y - my) * power
         print(ball.vx, ball.vy)
         start=True
-        print("0")
+        print("mouseUp")
 
-def iscollide(ball, planet):
+def gameOver(failureType,b): # 遊戲結束
+    global start
+    ball.vx = 0
+    ball.vy = 0
+    start = False
+    if failureType == "collision":
+        if b.type == "target":
+            print("You Win! Reached the Target!")
+        elif b.type == "planet":
+            print("Game Over: Collision detected!")
+    
+    elif failureType == "out_of_bounds":
+        print("Game Over: Ball is out of bounds!")
+
+def iscollide(ball, planet): # 碰撞偵測
     dx = planet.x - ball.x
     dy = planet.y - ball.y
+    tolerance = 20  # 容差值，降低遊戲難度，允許些微重疊
     distance = math.sqrt(dx*dx + dy*dy)
-    return distance <= (ball.Radius + planet.Radius)
+    return distance + tolerance <= (ball.Radius + planet.Radius) 
+
+def isOutOfBounds(ball):
+    return (ball.x < 0 or ball.x > W or ball.y < 0 or ball.y > H)
 
 def showScreen1():
-    global dragging
+    global dragging, start
     screen.fill((247,251,247))
-    ball.draw(screen) #依照之前塞的參數畫出來
-    planet.draw(screen)
+    changePosition()
+    for b in ballArray:
+        b.draw(screen)
     for event in pg.event.get():
         if event.type== pg.QUIT:
             pg.quit()
         draggingball(ball, event)
-    if iscollide(ball, planet):
-        print("Collision detected!")
+
+    if dragging: # 如果正在拖曳 就畫出拖曳線
+        drawDraggingLine(ball)
     
-    ball.x+=ball.vx*dt
-    ball.y+=ball.vy*dt
-    ball.draw(screen)
-    if start:apply_gravity(ball,planet,dt)
-    if start:apply_gravity(planet,ball,dt)
-        
+    for b in ballArray:
+        if b.type!="ball" and iscollide(ball, b) and start:
+            gameOver("collision",b)
+    
+    if isOutOfBounds(ball) and start:
+        gameOver("out_of_bounds", ball)
+    
     pg.display.flip()
 
 
