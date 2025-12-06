@@ -188,7 +188,7 @@ def gameOver(failureType,b): # 遊戲結束
 def iscollide(ball, planet): # 碰撞偵測
     dx = planet.x - ball.x
     dy = planet.y - ball.y
-    tolerance = 20  # 容差值，降低遊戲難度，允許些微重疊
+    tolerance = 20 * (planet.type == "planet")   # 容差值，降低遊戲難度，允許些微重疊(只適用於行星)
     distance = math.sqrt(dx*dx + dy*dy)
     return distance + tolerance <= (ball.Radius + planet.Radius) 
 
