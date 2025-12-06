@@ -189,8 +189,8 @@ def draggingball(ball, event, power=POWER): # 處理拖曳與發射
         mx, my = pg.mouse.get_pos()
 
         # 速度 = 從球被拉的位置 → 放手瞬間回彈
-        ball.vx = (ball.start_x - mx) * power
-        ball.vy = (ball.start_y - my) * power
+        ball.vx = (ball.x - mx) * power
+        ball.vy = (ball.y - my) * power
         print(ball.vx, ball.vy)
         start=True
         print("mouseUp")
