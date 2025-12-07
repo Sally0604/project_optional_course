@@ -52,6 +52,13 @@ screen=pg.display.set_mode((W,H)) #設定視窗大小
 pg.display.set_caption("多元選修") #視窗標題
 image_icon=pg.image.load('image/game_icon.png') #載入icon
 pg.display.set_icon(image_icon) #設定icon
+# reset button image (放右上角)
+reset_img = pg.image.load('image/reset button.png').convert_alpha()
+# scale to reasonable size
+RESET_SIZE = 48
+reset_img = pg.transform.smoothscale(reset_img, (RESET_SIZE, RESET_SIZE))
+reset_margin = 10
+reset_rect = reset_img.get_rect()
 
 
 ##### initialize end
@@ -108,6 +115,17 @@ def reset(): # 重置遊戲
     planet.vx=planetVx0
     planet.vy=planetVy0
     start=False
+
+    # restore original images if they were changed (e.g., pop image)
+    if hasattr(ball, 'img'):
+        ball.img = pg.image.load('image/space_cat.png').convert_alpha()
+        ball.img = pg.transform.scale(ball.img, (ball.Radius*2, ball.Radius*2))
+
+    if hasattr(planet, 'img'):
+        planet.img = pg.image.load('image/Jupiter.png').convert_alpha()
+        planet.img = pg.transform.scale(planet.img, (planet.Radius*2, planet.Radius*2))
+    # reset any per-object surfaces
+    ball.tri_surf = pg.Surface((W, H), pg.SRCALPHA)
 
 def changePosition(): # 改變位置
     ball.x+=ball.vx*dt
@@ -229,6 +247,15 @@ def showScreen1():
     for event in pg.event.get():
         if event.type== pg.QUIT:
             pg.quit()
+        # 處理 reset 按鈕點擊
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            reset_pos = (W - reset_rect.width - reset_margin, reset_margin)
+            reset_hitbox = reset_rect.move(reset_pos)
+            if reset_hitbox.collidepoint(mx, my):
+                reset()
+                # don't start dragging when clicking the reset button
+                continue
         draggingball(ball, event)
 
     if dragging: # 如果正在拖曳 就畫出拖曳線 (要先畫拖曳線 再畫球免得被蓋住)
@@ -244,6 +271,10 @@ def showScreen1():
     # if isOutOfBounds(ball) and start:
     #     end("out_of_bounds", ball)
     
+    # draw reset button at top-right
+    reset_pos = (W - reset_rect.width - reset_margin, reset_margin)
+    screen.blit(reset_img, reset_pos)
+
     pg.display.flip()
 
 
