@@ -16,6 +16,7 @@ H=600 #螢幕高度
 W=800 #螢幕寬度
 background_image = pg.image.load('image/multiverse.png')
 background_image = pg.transform.smoothscale(background_image, (W, H))
+# 縮放圖片，符合螢幕大小
 SCALE=10
 TIME=2 # 60*TIME # 時間倍率
 
