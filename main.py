@@ -61,7 +61,7 @@ pg.display.set_caption("多元選修") #視窗標題
 image_icon=pg.image.load('image/game_icon.png') #載入icon
 pg.display.set_icon(image_icon) #設定icon
 # reset button image (放右上角)
-reset_img = pg.image.load('image/reset button.png').convert_alpha()
+reset_img = pg.image.load('image/reset button.png').convert_alpha() #convert_alpha() 保留透明度
 # scale to reasonable size
 RESET_SIZE = 48
 reset_img = pg.transform.smoothscale(reset_img, (RESET_SIZE, RESET_SIZE))
