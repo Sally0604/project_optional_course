@@ -16,6 +16,8 @@ H=600 #螢幕高度
 W=800 #螢幕寬度
 background_image = pg.image.load('image/multiverse.png')
 background_image = pg.transform.smoothscale(background_image, (W, H))
+
+
 # 縮放圖片，符合螢幕大小
 SCALE=10
 TIME=2 # 60*TIME # 時間倍率
@@ -50,6 +52,11 @@ targetVy0=0
 
 
 screen=pg.display.set_mode((W,H)) #設定視窗大小
+bg = pg.Surface(screen.get_size())
+bg = bg.convert()
+bg.fill((255,255,255))
+screen.blit(bg, (0, 0))
+
 pg.display.set_caption("多元選修") #視窗標題
 image_icon=pg.image.load('image/game_icon.png') #載入icon
 pg.display.set_icon(image_icon) #設定icon
@@ -214,7 +221,13 @@ def draggingball(ball, event, power=POWER): # 處理拖曳與發射
         start=True
         print("mouseUp")
 
-def end(failureType,b): # 遊戲結束
+def win():
+    print("You Win! Reached the Target!")
+    font = pg.font.SysFont("simhei", 60)
+    text = font.render("Hello", True, (0,0,0), (255,255,255))
+    screen.blit(text, (320,240))
+
+def end(eventType,b): # 遊戲結束
     global start
     ball.img = pg.image.load('image/space_cat_pop.png')
     ball.img = pg.transform.scale(ball.img, (ball.Radius*2*3, ball.Radius*2*3 ))
@@ -222,13 +235,13 @@ def end(failureType,b): # 遊戲結束
     ball.vx = 0
     ball.vy = 0
     start = False
-    if failureType == "collision":
+    if eventType == "collision":
         if b.type == "target":
-            print("You Win! Reached the Target!")
+            win()
         elif b.type == "planet":
             print("Game Over: Collision detected!")
     
-    # elif failureType == "out_of_bounds":
+    # elif eventType == "out_of_bounds":
     #     print("Game Over: Ball is out of bounds!")
 
 def iscollide(ball, planet): # 碰撞偵測
@@ -240,6 +253,39 @@ def iscollide(ball, planet): # 碰撞偵測
 
 def isOutOfBounds(ball):
     return (ball.x < 0 or ball.x > W or ball.y < 0 or ball.y > H)
+
+waiting = True
+
+def initialScreen():
+    global waiting
+    screen.fill((247,251,247))
+    
+    fontTitle = pg.font.SysFont("simhei", 40)
+    textTitle = fontTitle.render("Catler's Space Adventure", True, (0,0,0),(247,251,247))
+    screen.blit(textTitle, (W/2 - textTitle.get_width()/2,H/2 - 150))
+
+    fontClick = pg.font.SysFont("simhei", 30)
+    textClick = fontClick.render("Click Kepler to Start", True, (0,0,0),(247,251,247))
+    screen.blit(textClick, (W/2 - textClick.get_width()/2,H/2 - 100))
+    imageKepler = pg.image.load('image/Kepler.png').convert_alpha()
+    imageKepler = pg.transform.smoothscale(imageKepler, (imageKepler.get_width()//2, imageKepler.get_height()//2))
+    screen.blit(imageKepler, (W/2 - imageKepler.get_width()/2,H/2 - 50))
+    button_rect = imageKepler.get_rect(topleft=(W/2 - imageKepler.get_width()/2,H/2 - 50))
+    # 按鈕偵測
+    pg.display.flip()
+    while waiting:
+        for event in pg.event.get():
+            if event.type== pg.QUIT:
+                pg.quit()
+            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                mx, my = event.pos
+                if button_rect.collidepoint(mx, my):
+                    waiting = False  # start the game
+            msx, msy = pg.mouse.get_pos()
+            if msx >= button_rect.left and msx <= button_rect.right and msy >= button_rect.top and msy <= button_rect.bottom:
+                pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND) # change cursor to hand
+            else:  
+                pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW) # change cursor to arrow
 
 def showScreen1():
     global dragging, start
@@ -282,6 +328,10 @@ def showScreen1():
 while 1:
     dt=clock.tick(60*TIME)/1000 # 60fps 轉成秒
     screen.blit(background_image, (0, 0))
-    showScreen1()
+    pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW) # default cursor
+    if waiting :
+        initialScreen()
+    if not waiting:
+        showScreen1()
 
 pg.quit()
