@@ -111,6 +111,8 @@ clock=pg.time.Clock() #計時器
 dt=0
 dragging=False
 start=False
+win_flag=False
+
 
 def reset(): # 重置遊戲
     global start
@@ -222,21 +224,29 @@ def draggingball(ball, event, power=POWER): # 處理拖曳與發射
         print("mouseUp")
 
 def win():
-    print("You Win! Reached the Target!")
+    #print("You Win! Reached the Target!")
     font = pg.font.SysFont("simhei", 60)
-    text = font.render("Hello", True, (0,0,0), (255,255,255))
-    screen.blit(text, (320,240))
+    text = font.render("Congratulations!", True, (247,251,247))
+    screen.blit(text, (W//2 - text.get_width()/2,H//2+50))
+    imageKepler = pg.image.load('image/Kepler.png').convert_alpha()
+    imageKepler = pg.transform.smoothscale(imageKepler, (imageKepler.get_width()//2, imageKepler.get_height()//2))
+    screen.blit(imageKepler, (W/2 - imageKepler.get_width()/2,H/2 - 200))
+    pg.display.flip()
+    pg.time.delay(3000)  # 停留3秒
 
 def end(eventType,b): # 遊戲結束
-    global start
+    global start,win_flag
     ball.img = pg.image.load('image/space_cat_pop.png')
     ball.img = pg.transform.scale(ball.img, (ball.Radius*2*3, ball.Radius*2*3 ))
     ball.draw(screen)
     ball.vx = 0
     ball.vy = 0
+    pg.display.flip()
     start = False
     if eventType == "collision":
         if b.type == "target":
+            win_flag=True
+            print("You Win! Reached the Target!")
             win()
         elif b.type == "planet":
             print("Game Over: Collision detected!")
@@ -286,11 +296,16 @@ def initialScreen():
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND) # change cursor to hand
             else:  
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW) # change cursor to arrow
-
+collision_detected = False
+global B
 def showScreen1():
-    global dragging, start
+    global dragging, start,win_flag,collision_detected,B
     # screen.fill((247,251,247))
     changePosition()
+    if collision_detected:
+        end("collision", B)
+        collision_detected = False
+    
     for event in pg.event.get():
         if event.type== pg.QUIT:
             pg.quit()
@@ -313,7 +328,10 @@ def showScreen1():
 
     for b in ballArray:
         if b.type!="ball" and iscollide(ball, b) and start:
-            end("collision",b)
+            if not collision_detected:
+                collision_detected = True
+                B = b
+                break
     
     # if isOutOfBounds(ball) and start:
     #     end("out_of_bounds", ball)
@@ -321,7 +339,8 @@ def showScreen1():
     # draw reset button at top-right
     reset_pos = (W - reset_rect.width - reset_margin, reset_margin)
     screen.blit(reset_img, reset_pos)
-
+    # if win_flag:
+    #     win()
     pg.display.flip()
 
 
