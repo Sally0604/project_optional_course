@@ -118,6 +118,8 @@ def reset(): # 重置遊戲
     global start
     ball.vx=ballVx0
     ball.vy=ballVy0
+    ball.x=ballX0
+    ball.y=ballY0
     planet.x=planetX0
     planet.y=planetY0
     planet.vx=planetVx0
@@ -135,6 +137,7 @@ def reset(): # 重置遊戲
         planet.img = pg.transform.scale(planet.img, (planet.Radius*2, planet.Radius*2))
     # reset any per-object surfaces
     ball.tri_surf = pg.Surface((W, H), pg.SRCALPHA)    
+    pg.display.flip()
 
 def changePosition(): # 改變位置
     ball.x+=ball.vx*dt
