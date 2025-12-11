@@ -106,14 +106,13 @@ start=False
 
 def reset(): # 重置遊戲
     global start
-    ball.x=ballX0
-    ball.y=ballY0
     ball.vx=ballVx0
     ball.vy=ballVy0
     planet.x=planetX0
     planet.y=planetY0
     planet.vx=planetVx0
     planet.vy=planetVy0
+
     start=False
 
     # restore original images if they were changed (e.g., pop image)
@@ -125,7 +124,7 @@ def reset(): # 重置遊戲
         planet.img = pg.image.load('image/Jupiter.png').convert_alpha()
         planet.img = pg.transform.scale(planet.img, (planet.Radius*2, planet.Radius*2))
     # reset any per-object surfaces
-    ball.tri_surf = pg.Surface((W, H), pg.SRCALPHA)
+    ball.tri_surf = pg.Surface((W, H), pg.SRCALPHA)    
 
 def changePosition(): # 改變位置
     ball.x+=ball.vx*dt
