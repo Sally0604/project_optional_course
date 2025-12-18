@@ -239,8 +239,13 @@ def win():
     screen.blit(imageKepler, (W/2 - imageKepler.get_width()/2,H/2 - 200))
     pg.display.flip()
     # pg.time.delay(2000)  # 停留3秒
-    planetX0=random.randint(100, W-100)
-    planetY0=random.randint(100, H-100)
+    while 1:
+        planetX0=random.randint(100, W-100)
+        planetY0=random.randint(100, H-100)
+        if abs(planetX0-targetX0) > 100 and abs(planetY0-targetY0) > 100:
+            break
+        if abs(planetX0-ballX0) > 100 and abs(planetY0-ballY0) > 100:
+            break
 
 def end(eventType,b): # 遊戲結束
     global start,win_flag,score
