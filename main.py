@@ -10,6 +10,7 @@ https://www.peko-step.com/zhtw/tool/tfcolor.html (顏色轉換器)
 
 import pygame as pg
 import math
+import random
 pg.init()
 ##### initialize
 H=600 #螢幕高度
@@ -50,8 +51,8 @@ targetMass=1
 targetVx0=0
 targetVy0=0
 
-
-screen=pg.display.set_mode((W,H)) #設定視窗大小
+scoreBarHeight = 50
+screen=pg.display.set_mode((W,H+scoreBarHeight)) #設定視窗大小
 bg = pg.Surface(screen.get_size())
 bg = bg.convert()
 bg.fill((255,255,255))
@@ -112,10 +113,10 @@ dt=0
 dragging=False
 start=False
 win_flag=False
-
+score=0
 
 def reset(): # 重置遊戲
-    global start
+    global start,win_flag,score
     ball.vx=ballVx0
     ball.vy=ballVy0
     ball.x=ballX0
@@ -136,7 +137,9 @@ def reset(): # 重置遊戲
         planet.img = pg.image.load('image/Jupiter.png').convert_alpha()
         planet.img = pg.transform.scale(planet.img, (planet.Radius*2, planet.Radius*2))
     # reset any per-object surfaces
-    ball.tri_surf = pg.Surface((W, H), pg.SRCALPHA)    
+    ball.tri_surf = pg.Surface((W, H), pg.SRCALPHA)   
+    if not win_flag:
+        score -= 100*random.randint(11, 20)
     pg.display.flip()
 
 def changePosition(): # 改變位置
@@ -226,6 +229,7 @@ def draggingball(ball, event, power=POWER): # 處理拖曳與發射
         print("mouseUp")
 
 def win():
+    global planetX0,planetY0
     #print("You Win! Reached the Target!")
     font = pg.font.SysFont("simhei", 60)
     text = font.render("Congratulations!", True, (247,251,247))
@@ -234,10 +238,12 @@ def win():
     imageKepler = pg.transform.smoothscale(imageKepler, (imageKepler.get_width()//2, imageKepler.get_height()//2))
     screen.blit(imageKepler, (W/2 - imageKepler.get_width()/2,H/2 - 200))
     pg.display.flip()
-    pg.time.delay(3000)  # 停留3秒
+    # pg.time.delay(2000)  # 停留3秒
+    planetX0=random.randint(100, W-100)
+    planetY0=random.randint(100, H-100)
 
 def end(eventType,b): # 遊戲結束
-    global start,win_flag
+    global start,win_flag,score
     ball.img = pg.image.load('image/space_cat_pop.png')
     ball.img = pg.transform.scale(ball.img, (ball.Radius*2*3, ball.Radius*2*3 ))
     ball.draw(screen)
@@ -249,9 +255,12 @@ def end(eventType,b): # 遊戲結束
         if b.type == "target":
             win_flag=True
             print("You Win! Reached the Target!")
-            win()
+            score += 100*random.randint(1, 10)
+            return "plus"
         elif b.type == "planet":
             print("Game Over: Collision detected!")
+            score -= 100*random.randint(11, 20)
+            return "minus"
     
     # elif eventType == "out_of_bounds":
     #     print("Game Over: Ball is out of bounds!")
@@ -293,20 +302,32 @@ def initialScreen():
                 mx, my = event.pos
                 if button_rect.collidepoint(mx, my):
                     waiting = False  # start the game
+                    screen.fill((247,251,247))   # 清空畫面
+                    pg.display.flip()            # 更新畫面
+
             msx, msy = pg.mouse.get_pos()
             if msx >= button_rect.left and msx <= button_rect.right and msy >= button_rect.top and msy <= button_rect.bottom:
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND) # change cursor to hand
             else:  
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW) # change cursor to arrow
 collision_detected = False
-global B
+B = None
 def showScreen1():
-    global dragging, start,win_flag,collision_detected,B
+    global dragging, start,win_flag,collision_detected,B, score
     # screen.fill((247,251,247))
     changePosition()
     if collision_detected:
-        end("collision", B)
+        s=end("collision", B)
         collision_detected = False
+        if s == "plus":
+            win()
+            win_flag=True
+            pg.time.delay(1000)  # 停留3秒
+            reset()
+            win_flag=False
+        elif s == "minus":
+            pg.time.delay(1000)  # 停留3秒
+            reset()
     
     for event in pg.event.get():
         if event.type== pg.QUIT:
@@ -327,6 +348,14 @@ def showScreen1():
     
     for b in ballArray:
         b.draw(screen)
+
+    # Draw score bar on top
+    score_bar_surf = pg.Surface((W, scoreBarHeight), pg.SRCALPHA)
+    score_bar_surf.fill((0, 0, 0, 128))  # semi-transparent black
+    font = pg.font.SysFont("simhei", 30)
+    text = font.render("Score: "+str(score), True, (255, 255, 255))
+    score_bar_surf.blit(text, (10, 10))
+    screen.blit(score_bar_surf, (0, H))
 
     for b in ballArray:
         if b.type!="ball" and iscollide(ball, b) and start:
