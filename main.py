@@ -114,9 +114,10 @@ dragging=False
 start=False
 win_flag=False
 score=0
+lives=10
 
 def reset(): # 重置遊戲
-    global start,win_flag,score
+    global start,win_flag,score,lives
     ball.vx=ballVx0
     ball.vy=ballVy0
     ball.x=ballX0
@@ -140,6 +141,7 @@ def reset(): # 重置遊戲
     ball.tri_surf = pg.Surface((W, H), pg.SRCALPHA)   
     if not win_flag:
         score -= 100*random.randint(11, 20)
+        lives -= 1
     pg.display.flip()
 
 def changePosition(): # 改變位置
@@ -248,7 +250,7 @@ def win():
             break
 
 def end(eventType,b): # 遊戲結束
-    global start,win_flag,score
+    global start,win_flag,score,lives
     ball.img = pg.image.load('image/space_cat_pop.png')
     ball.img = pg.transform.scale(ball.img, (ball.Radius*2*3, ball.Radius*2*3 ))
     ball.draw(screen)
@@ -261,10 +263,12 @@ def end(eventType,b): # 遊戲結束
             win_flag=True
             print("You Win! Reached the Target!")
             score += 100*random.randint(1, 10)
+            lives += 3
             return "plus"
         elif b.type == "planet":
             print("Game Over: Collision detected!")
             score -= 100*random.randint(11, 20)
+            lives -= 1
             return "minus"
     
     # elif eventType == "out_of_bounds":
@@ -318,7 +322,7 @@ def initialScreen():
 collision_detected = False
 B = None
 def showScreen1():
-    global dragging, start,win_flag,collision_detected,B, score
+    global dragging, start,win_flag,collision_detected,B, score, lives
     # screen.fill((247,251,247))
     changePosition()
     if collision_detected:
@@ -360,8 +364,15 @@ def showScreen1():
     font = pg.font.SysFont("simhei", 30)
     text = font.render("Score: "+str(score), True, (255, 255, 255))
     score_bar_surf.blit(text, (10, 10))
-    screen.blit(score_bar_surf, (0, H))
+    text_lives = font.render("Lives: "+str(lives), True, (255, 255, 255))
+    score_bar_surf.blit(text_lives, (W - text_lives.get_width() - 10, 10))
+    text_site = font.render(
+    f"X: {ball.x - ballX0:.2f}  Y: {ball.y - ballY0:.2f}",
+    True, (255,255,255)
+    )
 
+    score_bar_surf.blit(text_site, (W//2 - text_site.get_width()//2, 10))
+    screen.blit(score_bar_surf, (0, H))
     for b in ballArray:
         if b.type!="ball" and iscollide(ball, b) and start:
             if not collision_detected:
