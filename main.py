@@ -115,6 +115,11 @@ start=False
 win_flag=False
 score=0
 lives=10
+best_score=-10000000
+waiting = True
+waiting_for_restart = False
+collision_detected = False
+B = None
 
 def reset(): # 重置遊戲
     global start,win_flag,score,lives
@@ -140,7 +145,7 @@ def reset(): # 重置遊戲
     # reset any per-object surfaces
     ball.tri_surf = pg.Surface((W, H), pg.SRCALPHA)   
     if not win_flag:
-        score -= 100*random.randint(11, 20)
+        score -= 10*random.randint(11, 20)
         lives -= 1
     pg.display.flip()
 
@@ -230,6 +235,16 @@ def draggingball(ball, event, power=POWER): # 處理拖曳與發射
         start=True
         print("mouseUp")
 
+def planet_random_position():
+    global planetX0,planetY0
+    while 1:
+        planetX0=random.randint(100, W-100)
+        planetY0=random.randint(100, H-100)
+        if abs(planetX0-targetX0) > 100 and abs(planetY0-targetY0) > 100:
+            break
+        if abs(planetX0-ballX0) > 100 and abs(planetY0-ballY0) > 100:
+            break
+    
 def win():
     global planetX0,planetY0
     #print("You Win! Reached the Target!")
@@ -241,13 +256,7 @@ def win():
     screen.blit(imageKepler, (W/2 - imageKepler.get_width()/2,H/2 - 200))
     pg.display.flip()
     # pg.time.delay(2000)  # 停留3秒
-    while 1:
-        planetX0=random.randint(100, W-100)
-        planetY0=random.randint(100, H-100)
-        if abs(planetX0-targetX0) > 100 and abs(planetY0-targetY0) > 100:
-            break
-        if abs(planetX0-ballX0) > 100 and abs(planetY0-ballY0) > 100:
-            break
+    planet_random_position()
 
 def end(eventType,b): # 遊戲結束
     global start,win_flag,score,lives
@@ -262,13 +271,12 @@ def end(eventType,b): # 遊戲結束
         if b.type == "target":
             win_flag=True
             print("You Win! Reached the Target!")
-            score += 100*random.randint(1, 10)
+            score += 10*random.randint(1, 10)
             lives += 3
             return "plus"
         elif b.type == "planet":
             print("Game Over: Collision detected!")
-            score -= 100*random.randint(11, 20)
-            lives -= 1
+            score -= 10*random.randint(11, 20)
             return "minus"
     
     # elif eventType == "out_of_bounds":
@@ -283,8 +291,6 @@ def iscollide(ball, planet): # 碰撞偵測
 
 def isOutOfBounds(ball):
     return (ball.x < 0 or ball.x > W or ball.y < 0 or ball.y > H)
-
-waiting = True
 
 def initialScreen():
     global waiting
@@ -319,8 +325,42 @@ def initialScreen():
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND) # change cursor to hand
             else:  
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW) # change cursor to arrow
-collision_detected = False
-B = None
+
+def restart_game():
+    global score, lives, waiting,best_score, waiting_for_restart
+    best_score = max(best_score, score)
+    margin=120
+    font = pg.font.SysFont("simhei", 40)
+    gameEnd_surf = pg.Surface((W*3//5, H*3//4), pg.SRCALPHA)
+    surf_height=gameEnd_surf.get_height()
+    surf_width=gameEnd_surf.get_width()
+    gameEnd_surf.fill((40,190,255))  # semi-transparent black
+    text_end = font.render("Game End!", True, (247,251,247))
+    gameEnd_surf.blit(text_end, (surf_width//2 - text_end.get_width()//2, margin - text_end.get_height()//2))
+    text_score = font.render(f"Final Score: {score}", True, (247,251,247))
+    gameEnd_surf.blit(text_score, (surf_width//2 - text_score.get_width()//2, margin+(surf_height-2*margin)//3-text_score.get_height()//2))
+    text_best_score = font.render(f"Best Score: {best_score}", True, (247,251,247))
+    gameEnd_surf.blit(text_best_score, (surf_width//2 - text_best_score.get_width()//2, margin+(surf_height-2*margin)//3*2-text_best_score.get_height()//2))
+    button_restart = font.render("press space to restart", True, (247,251,247))
+    gameEnd_surf.blit(button_restart, (surf_width//2 - button_restart.get_width()//2, surf_height-margin//2-button_restart.get_height()//2))
+
+    screen.blit(gameEnd_surf, (screen.get_width()//2-gameEnd_surf.get_width()//2, screen.get_height()//2 - gameEnd_surf.get_height()//2))
+    pg.display.flip()
+    for event in pg.event.get():
+        if event.type== pg.QUIT:
+            pg.quit()
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_SPACE:
+                waiting_for_restart = True
+                print("Restarting game...")
+
+    if waiting_for_restart:
+        waiting_for_restart = False
+        planet_random_position()
+        reset()
+        score = 0
+        lives = 10
+
 def showScreen1():
     global dragging, start,win_flag,collision_detected,B, score, lives
     # screen.fill((247,251,247))
@@ -386,6 +426,9 @@ def showScreen1():
     # draw reset button at top-right
     reset_pos = (W - reset_rect.width - reset_margin, reset_margin)
     screen.blit(reset_img, reset_pos)
+
+    if lives <= 0:
+        restart_game()
     # if win_flag:
     #     win()
     pg.display.flip()
